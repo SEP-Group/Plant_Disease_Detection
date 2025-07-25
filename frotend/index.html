@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Disease Detector</title>
+
+  <!-- Font Awesome CDN -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Main content starts -->
+  <div class="main-content">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <img src="images/logo.png" alt="Logo" />
+      </div>
+      <div class="language-detect">
+        <select>
+          <option>English</option>
+          <option>Nepali</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>Plant Disease Detector</h1>
+      <p>Detect the disease affecting your plant and<br />get medicine recommendation</p>
+      <div class="hero-buttons">
+        <label class="scan-btn" for="scanInput">
+          <i class="fas fa-camera"></i> Scan
+        </label>
+        <input type="file" id="scanInput" accept="image/*" capture="environment" hidden />
+        <label class="upload-btn" for="uploadInput">
+          <i class="fas fa-upload"></i> Upload Image
+        </label>
+        <input type="file" id="uploadInput" accept="image/*" hidden />
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+      <div class="feature">
+        <i class="fas fa-virus"></i>
+        <h3>Disease Identification</h3>
+        <p>Identify diseases present in the plant</p>
+      </div>
+      <div class="feature">
+        <i class="fas fa-pills"></i>
+        <h3>Medicine Recommendation</h3>
+        <p>Get the recommended medicine for the disease</p>
+      </div>
+      <div class="feature">
+        <i class="fas fa-map-marker-alt"></i>
+        <h3>Find Nearest Vet</h3>
+        <p>Locate the nearest vet for medicine pricing</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Chatbox Section -->
+  <section class="chatbox">
+    <div class="chat-header">
+      <img src="images/logo.png" alt="Chat Avatar" />
+      <span>Chat</span>
+    </div>
+    <div class="chat-messages">
+      <p>Hello! How can I assist you?</p>
+      <p>You can upload an image of your plant, and I’ll provide suggestions on how to care for it.</p>
+      <p>Feel free to ask any questions you have!</p>
+    </div>
+    <div class="chat-input">
+      <input type="text" placeholder="Send a message" />
+      <button>+</button>
+    </div>
+  </section>
+</body>
+</html>

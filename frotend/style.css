@@ -1,0 +1,220 @@
+/* Reset basic styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  background-color: #bae4e4;
+  color: #1e1e1e;
+  padding: 20px;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.logo img {
+  width: 100px;
+  height: auto;
+}
+
+.language-detect {
+  display: flex;
+  gap: 10px;
+}
+
+
+.language-detect select,
+.language-detect button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.language-detect button {
+  background-color: #204e37;
+  color: white;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.hero h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1e392a;
+}
+
+.hero p {
+  font-size: 16px;
+  margin: 12px 0 24px;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.scan-btn,
+.upload-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Icons inside buttons */
+.hero-buttons label i {
+  margin-right: 8px;
+  vertical-align: middle;
+  font-size: 18px;
+}
+
+.scan-btn {
+  background-color: white;
+  color: #204e37;
+  border: 2px solid #204e37;
+}
+.scan-btn:hover {
+  background-color: #204e37;
+  color: white;
+}
+
+.upload-btn {
+  background-color: #204e37;
+  color: white;
+}
+.upload-btn:hover {
+  background-color: #badecc;
+}
+
+/* Features Section */
+.features {
+  display: flex;
+  justify-content: center;  /* Center the feature boxes */
+  gap: 15px;               /* Space between feature boxes */
+  margin-top: 30px;
+  background-color: white;
+  border-radius: 15px;
+  padding: 15px 25px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.feature {
+  flex: 0 0 28%;          /* Fix width around 28% */
+  max-width: 26%;
+  text-align: center;
+}
+
+/* New icon styles */
+.features .feature i {
+  font-size: 40px;
+  color: #204e37;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.feature h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.feature p {
+  font-size: 14px;
+  color: #444;
+}
+
+/* Chatbox Section */
+.chatbox {
+  width: 300px;
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  overflow: hidden;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #064723;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-header img {
+  width: 80px;
+  margin-right: 8px;
+  height: auto;
+}
+
+.chat-header span {
+  font-weight: 600;
+}
+
+.chat-messages {
+  padding: 16px;
+  font-size: 14px;
+  color: #333;
+}
+
+.chat-messages p {
+  margin-bottom: 10px;
+}
+
+.chat-input {
+  display: flex;
+  border-top: 1px solid #eee;
+  padding: 10px 16px;
+  background-color: #fafafa;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+.chat-input button {
+  background-color: #204e37;
+  color: white;
+  border: none;
+  padding: 0 12px;
+  margin-left: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #1a3b2a;
+}
+
+/* Cursor pointer for labels */
+.hero-buttons label {
+  cursor: pointer;
+}
+
