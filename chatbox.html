@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot with Language Support</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .chatbot-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #b8ebd1;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+
+    .chatbot-icon i {
+      font-size: 28px;
+      color: #10cc3fc3;
+    }
+
+    .chat-window {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 300px;
+      background-color: #f0f8ff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+
+    .chat-header {
+      background-color: #87CEFA;
+      padding: 10px;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header span {
+      font-weight: bold;
+    }
+
+    .chat-body {
+      padding: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .chat-footer {
+      padding: 10px;
+      display: flex;
+      gap: 5px;
+    }
+
+    .chat-footer input {
+      flex: 1;
+      padding: 5px;
+    }
+
+    .chat-footer button {
+      padding: 5px 10px;
+      background-color: #87CEFA;
+      border: none;
+      cursor: pointer;
+    }
+
+    .language-select {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ✅ Chatbot Icon with Font Awesome -->
+<div class="chatbot-icon" onclick="toggleChat()">
+  <i class="fa-solid fa-message"></i>
+</div>
+
+<!-- ✅ Chat Window -->
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <span id="chatTitle">Chatbot</span>
+    <select id="language" class="language-select" onchange="switchLanguage()">
+      <option value="en">English</option>
+      <option value="np">नेपाली</option>
+    </select>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <p id="welcomeMsg">Hello! How can I help you?</p>
+  </div>
+  <div class="chat-footer">
+    <input type="text" id="userInput" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const API_KEY = "AIzaSyAbflu9HfEuB9N5SNrIaqiFVgFHWwKwfUc";
+
+  
+  // API URL for Gemini 2.0 Flash
+  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+  let currentLang = 'en';
+
+  const messages = {
+    en: {
+      title: "Chatbot",
+      welcome: "Hello! How can I help you?",
+      placeholder: "Type your message...",
+      send: "Send"
+    },
+    np: {
+      title: "च्याटबट",
+      welcome: "नमस्ते! म तपाईंलाई कसरी सहयोग गर्न सक्छु?",
+      placeholder: "तपाईंको सन्देश टाइप गर्नुहोस्...",
+      send: "पठाउनुहोस्"
+    }
+  };
+
+  function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+    chatWindow.style.flexDirection = 'column';
+  }
+
+  function switchLanguage() {
+    currentLang = document.getElementById('language').value;
+    document.getElementById('chatTitle').innerText = messages[currentLang].title;
+    document.getElementById('welcomeMsg').innerText = messages[currentLang].welcome;
+    document.getElementById('userInput').placeholder = messages[currentLang].placeholder;
+    document.querySelector('.chat-footer button').innerText = messages[currentLang].send;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const userText = input.value.trim();
+    if (userText === '') return;
+
+    const userMsg = document.createElement('p');
+    userMsg.textContent = userText;
+    userMsg.style.textAlign = "right";
+    document.getElementById('chatBody').appendChild(userMsg);
+    input.value = '';
+
+    // Show temporary loading
+    const botMsg = document.createElement('p');
+    botMsg.textContent = "...";
+    botMsg.style.textAlign = "left";
+    document.getElementById('chatBody').appendChild(botMsg);
+
+    const prompt = currentLang === 'np'
+      ? "कृपया यस कुराकानीलाई नेपाली भाषामा उत्तर दिनुहोस्:\n" + userText
+      : userText;
+
+    try {
+      const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      const data = await response.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't respond.";
+      botMsg.textContent = reply;
+    } catch (err) {
+      botMsg.textContent = "Sorry, I couldn't respond.";
+      console.error(err);
+    }
+  }
+</script>
+
+</body>
+</html>
