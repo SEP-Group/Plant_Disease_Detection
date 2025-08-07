@@ -1,25 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Plant Disease Detector</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Plant Disease Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        input[type="file"], input[type="submit"] {
+            margin: 10px;
+            padding: 10px;
+        }
+        img {
+            max-width: 400px;
+            margin-top: 20px;
+        }
+        .error { color: red; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Plant Disease Detection</h1>
-    <form action="/" method="POST" enctype="multipart/form-data">
-      <input type="file" name="image" accept="image/*" required />
-      <button type="submit">Predict</button>
+
+    <h1>🌿 Plant Disease Detection</h1>
+
+    <form action="/predict" method="post" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required><br>
+        <input type="submit" value="Predict">
     </form>
 
-    {% if prediction %}
-      <div class="result">
-        <h2>Prediction:</h2>
-        <p><strong>{{ prediction }}</strong></p>
-        <img src="{{ image_url }}" alt="Uploaded Image" />
-      </div>
+    {% if error %}
+        <p class="error">{{ error }}</p>
     {% endif %}
-  </div>
+
+    {% if prediction %}
+        <h2>Prediction: {{ prediction }}</h2>
+        <h3>Confidence: {{ confidence }}%</h3>
+        <img src="{{ image_path }}" alt="Uploaded Image">
+    {% endif %}
+
 </body>
 </html>
