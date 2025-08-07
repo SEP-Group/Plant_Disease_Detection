@@ -1,29 +1,30 @@
 import os
+import pickle
 
 import numpy as np
-import tensorflow as tf
-from flask import Flask, jsonify, render_template, request
-from PIL import Image
+from flask import Flask, render_template, request
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = "uploads"
 
-# Load your model
-model = tf.keras.models.load_model("plant_disease_model.h5")
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Load class names (optional if needed)
-import json
+# Load model and class labels
+model = load_model("plant_disease_model.h5")
 
-with open("class_names.json") as f:
-    class_names = json.load(f)
+with open("class_labels.pkl", "rb") as f:
+    class_indices = pickle.load(f)
 
+# Sort class labels by index to get correct order
+class_labels = [
+    label for label, idx in sorted(class_indices.items(), key=lambda x: x[1])
+]
 
-# Image preprocessing
-def preprocess_image(image):
-    image = image.resize((224, 224))  # adjust to your model's input size
-    image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)
-    return image
+IMG_SIZE = 224
 
 
 @app.route("/")
@@ -33,24 +34,34 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"})
-
-    file = request.files["file"]
+    if "image" not in request.files:
+        return render_template("index.html", error="No file part")
+    file = request.files["image"]
     if file.filename == "":
-        return jsonify({"error": "No selected file"})
+        return render_template("index.html", error="No selected file")
 
-    image = Image.open(file.stream).convert("RGB")
-    processed = preprocess_image(image)
-    prediction = model.predict(processed)
-    class_id = int(np.argmax(prediction))
-    confidence = float(np.max(prediction))
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(filepath)
 
-    label = (
-        class_names[class_id] if class_id < len(class_names) else f"Class {class_id}"
+    # Prepare image for model
+    img = image.load_img(filepath, target_size=(IMG_SIZE, IMG_SIZE))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0) / 255.0
+
+    # Predict
+    preds = model.predict(img_array)
+    class_idx = np.argmax(preds)
+    confidence = round(float(np.max(preds)) * 100, 2)
+
+    if class_idx >= len(class_labels):
+        prediction = "Unknown"
+    else:
+        prediction = class_labels[class_idx]
+
+    return render_template(
+        "index.html", prediction=prediction, confidence=confidence, image_path=filepath
     )
-
-    return jsonify({"label": label, "confidence": f"{confidence*100:.2f}%"})
 
 
 if __name__ == "__main__":
