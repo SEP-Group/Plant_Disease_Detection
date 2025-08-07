@@ -1,33 +1,29 @@
 import os
-import pickle
 
 import numpy as np
-from flask import Flask, render_template, request
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
-from werkzeug.utils import secure_filename
+import tensorflow as tf
+from flask import Flask, jsonify, render_template, request
+from PIL import Image
 
-# --- Flask setup ---
 app = Flask(__name__)
-UPLOAD_FOLDER = "static/uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["UPLOAD_FOLDER"] = "uploads"
 
-# --- Load model and class labels ---
-MODEL_PATH = "plant_disease_model.h5"
-LABELS_PATH = "class_labels.pkl"
+# Load your model
+model = tf.keras.models.load_model("plant_disease_model.h5")
 
-# Load the trained model
-model = load_model(MODEL_PATH)
+# Load class names (optional if needed)
+import json
 
-# Load class labels and sort them by index
-with open(LABELS_PATH, "rb") as f:
-    class_indices = pickle.load(f)
+with open("class_names.json") as f:
+    class_names = json.load(f)
 
-class_labels = [
-    label for label, idx in sorted(class_indices.items(), key=lambda item: item[1])
-]
 
-# --- Routes ---
+# Image preprocessing
+def preprocess_image(image):
+    image = image.resize((224, 224))  # adjust to your model's input size
+    image = np.array(image) / 255.0
+    image = np.expand_dims(image, axis=0)
+    return image
 
 
 @app.route("/")
@@ -37,51 +33,25 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "image" not in request.files:
-        return render_template("index.html", error="No file part in the request.")
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"})
 
-    file = request.files["image"]
-
+    file = request.files["file"]
     if file.filename == "":
-        return render_template("index.html", error="No selected file.")
+        return jsonify({"error": "No selected file"})
 
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        file.save(filepath)
+    image = Image.open(file.stream).convert("RGB")
+    processed = preprocess_image(image)
+    prediction = model.predict(processed)
+    class_id = int(np.argmax(prediction))
+    confidence = float(np.max(prediction))
 
-        # Preprocess image
-        img = image.load_img(filepath, target_size=(224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
-
-        # Predict
-        prediction = model.predict(img_array)
-        class_idx = np.argmax(prediction)
-
-        # Safety check
-        if class_idx >= len(class_labels):
-            predicted_label = "Unknown"
-        else:
-            predicted_label = class_labels[class_idx]
-
-        confidence = round(float(np.max(prediction)) * 100, 2)
-
-        return render_template(
-            "index.html",
-            prediction=predicted_label,
-            confidence=confidence,
-            image_path=filepath,
-        )
-
-    return render_template(
-        "index.html", error="Something went wrong with the image upload."
+    label = (
+        class_names[class_id] if class_id < len(class_names) else f"Class {class_id}"
     )
 
+    return jsonify({"label": label, "confidence": f"{confidence*100:.2f}%"})
 
-# --- Main ---
+
 if __name__ == "__main__":
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
     app.run(debug=True)
