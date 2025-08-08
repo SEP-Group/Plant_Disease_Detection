@@ -192,8 +192,59 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// Scan Modal Functions
-// ========== Open Scan Modal and Start Camera ==========
+// Disease descriptions dictionary
+const classDescriptions = {
+  "Apple___Apple_scab": "Apple scab is a fungal disease causing dark spots on leaves and fruit.",
+  "Apple___Black_rot": "Black rot causes rotting of fruits and leaf spots on apple trees.",
+  "Apple___Cedar_apple_rust": "Cedar apple rust causes orange spots on apple leaves and fruit.",
+  "Apple___healthy": "This apple leaf or fruit is healthy and free of diseases.",
+  "Blueberry___healthy": "This blueberry plant is healthy and free of diseases.",
+  "Cherry_(including_sour)___Powdery_mildew": "Powdery mildew causes white powdery growth on cherry leaves.",
+  "Cherry_(including_sour)___healthy": "This cherry plant is healthy and free of diseases.",
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Causes gray leaf spots on maize leaves.",
+  "Corn_(maize)___Common_rust_": "Common rust causes reddish-brown pustules on maize leaves.",
+  "Corn_(maize)___Northern_Leaf_Blight": "Northern Leaf Blight causes large, cigar-shaped lesions on maize leaves.",
+  "Corn_(maize)___healthy": "This maize plant is healthy and free of diseases.",
+  "Grape___Black_rot": "Black rot causes dark lesions and rotting on grape leaves and fruit.",
+  "Grape___Esca_(Black_Measles)": "Esca causes black measles-like spots on grape leaves.",
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Leaf blight causes spots and leaf damage on grapes.",
+  "Grape___healthy": "This grape plant is healthy and free of diseases.",
+  "Orange___Haunglongbing_(Citrus_greening)": "Citrus greening causes yellowing and misshapen oranges.",
+  "Peach___Bacterial_spot": "Bacterial spot causes dark, sunken spots on peach leaves and fruit.",
+  "Peach___healthy": "This peach plant is healthy and free of diseases.",
+  "Pepper,_bell___Bacterial_spot": "Bacterial spot causes lesions on pepper leaves and fruit.",
+  "Pepper,_bell___healthy": "This bell pepper plant is healthy and free of diseases.",
+  "Potato___Early_blight": "Early blight causes dark spots and rings on potato leaves.",
+  "Potato___Late_blight": "Late blight causes dark lesions leading to decay on potato leaves and tubers.",
+  "Potato___healthy": "This potato plant is healthy and free of diseases.",
+  "Raspberry___healthy": "This raspberry plant is healthy and free of diseases.",
+  "Soybean___healthy": "This soybean plant is healthy and free of diseases.",
+  "Squash___Powdery_mildew": "Powdery mildew causes white powdery spots on squash leaves.",
+  "Strawberry___Leaf_scorch": "Leaf scorch causes brown edges and spots on strawberry leaves.",
+  "Strawberry___healthy": "This strawberry plant is healthy and free of diseases.",
+  "Tomato___Bacterial_spot": "Bacterial spot causes dark, water-soaked spots on tomato leaves and fruit.",
+  "Tomato___Early_blight": "Early blight causes concentric rings on tomato leaves.",
+  "Tomato___Late_blight": "Late blight causes dark lesions on tomato leaves and fruit, leading to decay.",
+  "Tomato___Leaf_Mold": "Leaf mold causes yellow spots and fuzzy mold on tomato leaves.",
+  "Tomato___Septoria_leaf_spot": "Septoria leaf spot causes small, round spots with gray centers on tomato leaves.",
+  "Tomato___Spider_mites Two-spotted_spider_mite": "Spider mites cause stippling and webbing on tomato leaves.",
+  "Tomato___Target_Spot": "Target spot causes dark spots with concentric rings on tomato leaves.",
+  "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Causes yellowing and curling of tomato leaves.",
+  "Tomato___Tomato_mosaic_virus": "Causes mottled leaves and distorted fruit on tomato plants.",
+  "Tomato___healthy": "This tomato plant is healthy and free of diseases."
+  // Add more if needed
+};
+
+// ===== Helper function to format backend disease name to keys in classDescriptions =====
+function formatDiseaseName(name) {
+  let formatted = name.replace(': ', '___');
+  formatted = formatted.replace(/\s+/g, '_');
+  return formatted;
+}
+
+// ===== Scan Modal Functions =====
+
+// Open Scan Modal and Start Camera
 function openScanModal() {
   const modal = document.getElementById('scanModal');
   const video = document.getElementById('videoStream');
@@ -207,26 +258,23 @@ function openScanModal() {
 
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(s => {
-    stream = s;
-    video.srcObject = stream;
-    modal.classList.add('active');
-    result.innerHTML = '';
-    result.classList.remove('active');
-    captureBtn.disabled = false;
-    video.play();
+      stream = s;
+      video.srcObject = stream;
+      modal.classList.add('active');
+      result.innerHTML = '';
+      result.classList.remove('active');
+      captureBtn.disabled = false;
+      video.play();
     })
     .catch(err => {
-  console.error('Error accessing camera:', err);
-  const errorDiv = document.getElementById('scanError');
-  errorDiv.textContent = 'Unable to access camera. Please check your permissions or try another device.';
-  errorDiv.style.display = 'block';
-});
-
+      console.error('Error accessing camera:', err);
+      const errorDiv = document.getElementById('scanError');
+      errorDiv.textContent = 'Unable to access camera. Please check your permissions or try another device.';
+      errorDiv.style.display = 'block';
+    });
 }
 
-
-
-// ========== Close Scan Modal and Stop Camera ==========
+// Close Scan Modal and Stop Camera
 function closeScanModal() {
   const modal = document.getElementById('scanModal');
   const video = document.getElementById('videoStream');
@@ -247,9 +295,7 @@ function closeScanModal() {
   preview.innerHTML = '';  // clear preview on modal close
 }
 
-
-
-// ========== Capture Image from Video Stream and Send for Prediction ==========
+// Capture Image from Video Stream and Send for Prediction
 function captureImage() {
   const video = document.getElementById('videoStream');
   const canvas = document.getElementById('scanCanvas');
@@ -261,10 +307,10 @@ function captureImage() {
   canvas.height = video.videoHeight;
 
   if (canvas.width < 300 || canvas.height < 300) {
-  alert('Image too small for accurate detection. Please try again.');
-  captureBtn.disabled = false;
-  return;
-}
+    alert('Image too small for accurate detection. Please try again.');
+    captureBtn.disabled = false;
+    return;
+  }
 
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0);
@@ -308,7 +354,25 @@ function captureImage() {
       if (data.error) {
         result.innerHTML = `<p class="error">${data.error}</p>`;
       } else {
-        result.innerHTML = `<p><strong>Disease Detected:</strong> ${data.disease}</p>`;
+        const key = formatDiseaseName(data.disease);
+        const description = classDescriptions[key] || "No description available.";
+        result.innerHTML = `
+          <p><strong>Disease Detected:</strong> ${data.disease}</p>
+          <p>${description}</p>
+        `;
+
+                // Then prompt user if they want recommendations:
+        const askMsg = document.createElement('p');
+        askMsg.classList.add('bot-msg');
+        askMsg.textContent = "Do you want medicine or guide recommendation? Please type 'medicine' or 'guide'.";
+        result.appendChild(askMsg);
+
+        // Open chatbot automatically and focus input
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        document.getElementById('userInput').focus();
+
       }
     } catch (error) {
       console.error('Error:', error);
@@ -319,7 +383,7 @@ function captureImage() {
   }, 'image/jpeg');
 }
 
-// ========== Retake Image: clear results and re-enable camera feed ==========
+// Retake Image: clear results and re-enable camera feed
 function retakeImage() {
   const result = document.getElementById('scanResult');
   result.innerHTML = '';
@@ -334,44 +398,7 @@ function retakeImage() {
   }
 }
 
-
-// Disease Modal Functions
-function showDiseaseInfo(diseaseId) {
-  const modal = document.getElementById('diseaseModal');
-  const title = document.getElementById('diseaseTitle');
-  const description = document.getElementById('diseaseDescription');
-  const cures = document.getElementById('cureMeasures');
-  const disease = diseaseInfo[diseaseId][currentLang];
-
-  title.textContent = disease.title;
-  description.textContent = disease.description;
-  cures.innerHTML = disease.cures.map(cure => `<li>${cure}</li>`).join('');
-  modal.classList.add('active');
-}
-
-function closeDiseaseModal() {
-  const modal = document.getElementById('diseaseModal');
-  modal.classList.remove('active');
-}
-
-// Existing functions (unchanged)
-function toggleDarkMode() {
-  document.body.classList.toggle("dark");
-  const isDark = document.body.classList.contains("dark");
-  localStorage.setItem("darkMode", isDark ? "enabled" : "disabled");
-}
-
-// Attach the previewImage function when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  const uploadInput = document.getElementById('uploadInput');
-
-  // Attach event only once
-  if (uploadInput) {
-    uploadInput.addEventListener('change', previewImage);
-  }
-});
-
-// ========== Upload Image Preview and Predict ==========
+// Upload Image Preview and Predict
 function previewImage(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -401,7 +428,12 @@ function previewImage(event) {
     if (data.error) {
       result.textContent = data.error;
     } else {
-      result.innerHTML = `<strong>Disease Detected:</strong> ${data.disease}`;
+      const key = formatDiseaseName(data.disease);
+      const description = classDescriptions[key] || "No description available.";
+      result.innerHTML = `
+        <strong>Disease Detected:</strong> ${data.disease}<br />
+        ${description}
+      `;
     }
   })
   .catch(err => {
@@ -740,34 +772,4 @@ function handleSignup(e) {
 function handleContactForm(e) {
   e.preventDefault();
   alert("Thank you for contacting us! We'll get back to you soon.");
-}
-
-
-const classDescriptions = {
-  "Apple___Apple_scab": "Apple scab is a fungal disease causing dark spots on leaves and fruit.",
-  "Apple___Black_rot": "Black rot causes rotting of fruits and leaf spots on apple trees.",
-  "Apple___Cedar_apple_rust": "Cedar apple rust causes orange spots on apple leaves and fruit.",
-  "Apple___healthy": "This apple leaf or fruit is healthy and free of diseases.",
-  "Tomato___Late_blight": "Late blight causes dark lesions on tomato leaves and fruit, leading to decay.",
-  "Tomato___healthy": "This tomato plant is healthy and free of diseases."
-};
-
-// Function to update the description area
-function showDescription(predictedClass) {
-  const description = classDescriptions[predictedClass] || "No description available.";
-  document.getElementById('resultDescription').textContent = description;
-}
-
-// Upload handler example
-async function handleUpload(file) {
-  const predictedClass = await predictFromFile(file);
-  showDescription(predictedClass);
-  // Other upload result UI updates...
-}
-
-// Scan handler example
-async function handleScan(imageData) {
-  const predictedClass = await predictFromScan(imageData);
-  showDescription(predictedClass);
-  // Other scan result UI updates...
 }
