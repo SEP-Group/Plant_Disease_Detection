@@ -1,33 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Plant Disease Detector</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        input[type=file], input[type=submit] { margin: 10px; padding: 10px; }
-        img { max-width: 400px; margin-top: 20px; }
-        .error { color: red; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plant Disease Detector with Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/plant.png') }}" alt="Logo">
+    </div>
+    <ul class="nav-menu">
+      <li><a href="#about">About</a></li>
+      <li><a href="#hero">Scan</a></li>
+      <li><a href="#hero">Upload</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="right-controls">
+      <button class="nav-login-btn" onclick="openAuthModal()">Login / Signup</button>
+      <div class="language-detect">
+        <select id="siteLanguage" onchange="switchSiteLanguage()">
+          <option value="en">English</option>
+          <option value="np">नेपाली </option>
+        </select>
+      </div>
+      <div class="dark-toggle">
+        <label>
+          <input type="checkbox" onchange="toggleDarkMode()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </nav>
 
-<h1>Plant Disease Detection</h1>
+ <!-- Hero Section -->
+<section id="hero" class="hero">
+  <h1 id="heroTitle">Plant Disease Detector</h1>
+  <p id="heroSubtitle">
+    Scan or upload an image of your plant leaf<br>
+    to detect disease and get solutions instantly.
+  </p>
+  <div class="hero-buttons">
+    <label class="upload-btn" for="uploadInput">
+      <i class="fas fa-upload"></i>
+      <span id="uploadBtnText">Upload</span>
+    </label>
+    <input type="file" id="uploadInput" accept="image/*" />
+  </div>
 
-<form method="post" action="/predict" enctype="multipart/form-data">
-    <input type="file" name="image" accept="image/*" required>
-    <br>
-    <input type="submit" value="Predict">
-</form>
+  <div id="imagePreview" class="image-preview"></div>
+</section>
 
-{% if error %}
-    <p class="error">{{ error }}</p>
-{% endif %}
 
-{% if prediction %}
-    <h2>Prediction: {{ prediction }}</h2>
-    <h3>Confidence: {{ confidence }}%</h3>
-    <img src="{{ image_path }}" alt="Uploaded Image">
-{% endif %}
+  </section>
 
+  <!-- Scan Modal -->
+  <div id="scanModal" class="scan-modal">
+    <div class="scan-modal-content">
+      <span class="close-btn" onclick="closeScanModal()">&times;</span>
+      <h2>Scan Leaf</h2>
+      <video id="videoStream" autoplay playsinline></video>
+      <canvas id="scanCanvas" style="display: none;"></canvas>
+      <div class="scan-controls">
+        <button onclick="captureImage()">Capture</button>
+        <button onclick="retakeImage()">Retake</button>
+        <button onclick="closeScanModal()">Cancel</button>
+      </div>
+      <div id="scanResult" class="result-section"></div>
+    </div>
+  </div>
+
+  <!-- About Section-->
+  <section id="about" class="about-section">
+    <div class="about-container">
+      <h2>🌿 About Plant Disease Detector</h2>
+      <p>
+        <strong>Plant Disease Detector</strong> is a smart, AI-powered web application built to assist farmers, gardeners, and plant enthusiasts in identifying plant diseases with just a simple image scan.
+      </p>
+      <p>
+        Using advanced machine learning models, it analyzes leaf images to detect possible diseases with high accuracy. Within seconds, users receive the disease name, confidence score, and helpful treatment suggestions.
+      </p>
+      <p>
+        Our mission is to make plant care easier, reduce crop loss, and support eco-friendly farming by providing fast, accessible, and reliable plant health diagnostics.
+      </p>
+    </div>
+  </section>
+
+  <!-- Default Images Section -->
+  <section class="default-images">
+    <h2>Plant Disease Samples</h2>
+    <div class="image-grid">
+      <div class="image-card" data-disease="leaf-spot" onclick="showDiseaseInfo('leaf-spot')">
+        <img src="{{ url_for('static', filename='images/mangoleafspot.jpg') }}" alt="Sample 1">
+        <p>Leaf Spot Disease</p>
+      </div>
+      <div class="image-card" data-disease="powdery-mildew" onclick="showDiseaseInfo('powdery-mildew')">
+        <img src="{{ url_for('static', filename='images/powdery_mildew.jpg') }}" alt="Sample 2">
+        <p>Powdery Mildew</p>
+      </div>
+      <div class="image-card" data-disease="yellow-mosaic" onclick="showDiseaseInfo('yellow-mosaic')">
+        <img src="{{ url_for('static', filename='images/yellow-mosaic-virus.jpg') }}" alt="Sample 3">
+        <p>Yellow Mosaic Virus</p>
+      </div>
+      <div class="image-card" data-disease="rust" onclick="showDiseaseInfo('rust')">
+        <img src="{{ url_for('static', filename='images/rust-diseases.webp') }}" alt="Sample 4">
+        <p>Rust Infection</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Disease Info Modal -->
+  <div id="diseaseModal" class="auth-modal">
+    <div class="auth-modal-content disease-modal-content">
+      <span class="close-btn" onclick="closeDiseaseModal()">&times;</span>
+      <h2 id="diseaseTitle"></h2>
+      <p id="diseaseDescription"></p>
+      <h3>Cure Measures</h3>
+      <ul id="cureMeasures"></ul>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="feature" id="feature1">
+      <i class="fas fa-dna"></i>
+      <h3 id="feature1Title">Disease Detection</h3>
+      <p id="feature1Text">AI-powered diagnosis from your plant image</p>
+    </div>
+    <div class="feature" id="feature2">
+      <i class="fas fa-pills"></i>
+      <h3 id="feature2Title">Medicine Guide</h3>
+      <p id="feature2Text">Accurate medicine suggestions for recovery</p>
+    </div>
+    <div class="feature" id="feature3" data-feature="nearby-assistance">
+      <i class="fas fa-map-marked-alt"></i>
+      <h3 id="feature3Title">Nearby Assistance</h3>
+      <p id="feature3Text">Find pesticide shops near you in Nepal</p>
+    </div>
+  </section>
+
+  <!-- Chatbot Icon  -->
+  <div class="chatbot-icon" onclick="toggleChat()">
+    <i class="fa-solid fa-message"></i>
+  </div>
+
+  <!-- Chat Window -->
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <span id="chatTitle">Chatbot</span>
+      <select id="language" class="language-select" onchange="switchLanguage()">
+        <option value="en">English</option>
+        <option value="np">नेपाली </option>
+      </select>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <p id="welcomeMsg">Hello! How can I help you?</p>
+    </div>
+    <div class="chat-footer">
+      <input type="text" id="userInput" placeholder="Type your message...">
+      <button onclick="sendMessage()" id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- Floating Leaves  -->
+  <div class="floating-leaves">
+    <div class="floating-leaf"></div>
+    <div class="floating-leaf"></div>
+    <div class="floating-leaf"></div>
+    <div class="floating-leaf"></div>
+  </div>
+
+  <!-- Login/Signup Modal -->
+  <div id="authModal" class="auth-modal">
+    <div class="auth-modal-content">
+      <span class="close-btn" onclick="closeAuthModal()">&times;</span>
+      <div class="form-toggle">
+        <button id="loginToggle" class="active" onclick="showLogin()">Login</button>
+        <button id="signupToggle" onclick="showSignup()">Signup</button>
+      </div>
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit" class="submit-btn">Login</button>
+      </form>
+      <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
+        <h2>Signup</h2>
+        <input type="text" id="signupName" placeholder="Full Name" required />
+        <input type="email" id="signupEmail" placeholder="Email" required />
+        <input type="password" id="signupPassword" placeholder="Password" required />
+        <button type="submit" class="submit-btn">Signup</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contact Section -->
+  <section id="contact" class="contact-section">
+    <div class="contact-container">
+      <div class="contact-form">
+        <h2>Contact Us</h2>
+        <form onsubmit="handleContactForm(event)">
+          <input type="text" placeholder="Your Name" required />
+          <input type="email" placeholder="Your Email" required />
+          <textarea placeholder="Your Message" rows="5" required></textarea>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+      <div class="contact-info">
+        <h3>Get in Touch</h3>
+        <p><i class="fas fa-envelope"></i> support@plantdetector.com</p>
+        <p><i class="fas fa-phone"></i> +977-9800000000</p>
+        <p><i class="fas fa-map-marker-alt"></i> Kathmandu, Nepal</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Plant Disease Detector. All rights reserved.</p>
+    <div class="social-icons">
+      <a href="https://www.facebook.com/profile.php?id=61578956981668" target="_blank" rel="noopener noreferrer">
+        <i class="fab fa-facebook-f"></i>
+      </a>
+      <a href="https://x.com/plantdidetector?t=hPZO-yXuw6AMgupqHUkXxA&s=09" target="_blank" rel="noopener noreferrer">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="https://www.instagram.com/plantdiseasedetector?igsh=dmtzYWdoZW1nYXo5" target="_blank" rel="noopener noreferrer">
+        <i class="fab fa-instagram"></i>
+      </a>
+      <a href="https://github.com/SEP-Group/Plant_Disease_Detection" target="_blank" rel="noopener noreferrer">
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

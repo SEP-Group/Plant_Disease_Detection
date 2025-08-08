@@ -1,67 +1,54 @@
+import json
 import os
-import pickle
 
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+app.config["UPLOAD_FOLDER"] = "static/uploads"
 
-UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-# Load model and class labels
+# Load model and class names
 model = load_model("plant_disease_model.h5")
 
-with open("class_labels.pkl", "rb") as f:
-    class_indices = pickle.load(f)
-
-# Sort class labels by index to get correct order
-class_labels = [
-    label for label, idx in sorted(class_indices.items(), key=lambda x: x[1])
-]
-
-IMG_SIZE = 224
+with open("class_names.json") as f:
+    class_names = json.load(f)  # list of class names
 
 
 @app.route("/")
-def index():
+def home():
     return render_template("index.html")
 
 
 @app.route("/predict", methods=["POST"])
 def predict():
     if "image" not in request.files:
-        return render_template("index.html", error="No file part")
+        return jsonify({"error": "No image uploaded"}), 400
+
     file = request.files["image"]
     if file.filename == "":
-        return render_template("index.html", error="No selected file")
+        return jsonify({"error": "No selected file"}), 400
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
 
-    # Prepare image for model
-    img = image.load_img(filepath, target_size=(IMG_SIZE, IMG_SIZE))
+    # Preprocess
+    img = image.load_img(filepath, target_size=(224, 224))  # adjust if needed
     img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = img_array / 255.0  # normalize
 
     # Predict
-    preds = model.predict(img_array)
-    class_idx = np.argmax(preds)
-    confidence = round(float(np.max(preds)) * 100, 2)
+    prediction = model.predict(img_array)
+    predicted_class = class_names[np.argmax(prediction)]
 
-    if class_idx >= len(class_labels):
-        prediction = "Unknown"
-    else:
-        prediction = class_labels[class_idx]
+    # Optional: Clean display
+    clean_name = predicted_class.replace("___", ": ").replace("_", " ")
 
-    return render_template(
-        "index.html", prediction=prediction, confidence=confidence, image_path=filepath
-    )
+    return jsonify({"disease": clean_name})
 
 
 if __name__ == "__main__":
