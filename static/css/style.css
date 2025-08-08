@@ -33,7 +33,7 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('images/design.png');
+  background-image: url('/static/images/design.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

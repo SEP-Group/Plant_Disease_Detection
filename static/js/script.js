@@ -158,10 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', e => {
             e.preventDefault();
             const targetId = link.getAttribute('href').substring(1);
-            if (targetId === 'hero') {
-                 document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
-            } else if (document.getElementById(targetId)) {
-                document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
             }
         });
     });
@@ -185,8 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (toggleInput) toggleInput.checked = true;
     }
 
-    updateSiteUI();
-    updateChatUI();
+    // Call UI update functions if they exist
+    if (typeof updateSiteUI === "function") updateSiteUI();
+    if (typeof updateChatUI === "function") updateChatUI();
 
     const nearbyFeature = document.querySelector('[data-feature="nearby-assistance"]');
     if (nearbyFeature) {
@@ -194,99 +194,153 @@ document.addEventListener('DOMContentLoaded', () => {
         nearbyFeature.addEventListener('click', openPesticideShopsMap);
     }
 
-    document.querySelectorAll('.learn-more-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const disease = btn.getAttribute('data-disease');
-            alert(`Learn more about ${disease}`);
-        });
-    });
-
     const uploadInput = document.getElementById('uploadInput');
     if (uploadInput) uploadInput.addEventListener('change', previewImage);
 });
 
 
 // Scan Modal Functions
+// ========== Open Scan Modal and Start Camera ==========
 function openScanModal() {
   const modal = document.getElementById('scanModal');
   const video = document.getElementById('videoStream');
-  const canvas = document.getElementById('scanCanvas');
+  const captureBtn = document.getElementById('captureBtn');
   const result = document.getElementById('scanResult');
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert(messages[currentLang].geolocationError || 'Camera not supported on this device.');
+    alert('Camera not supported on this device.');
     return;
   }
 
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(s => {
-      stream = s;
-      video.srcObject = stream;
-      modal.classList.add('active');
-      result.innerHTML = '';
-      result.classList.remove('active');
+    stream = s;
+    video.srcObject = stream;
+    modal.classList.add('active');
+    result.innerHTML = '';
+    result.classList.remove('active');
+    captureBtn.disabled = false;
+    video.play();
     })
     .catch(err => {
-      console.error('Error accessing camera:', err);
-      alert(messages[currentLang].geolocationError || 'Unable to access camera.');
-    });
+  console.error('Error accessing camera:', err);
+  const errorDiv = document.getElementById('scanError');
+  errorDiv.textContent = 'Unable to access camera. Please check your permissions or try another device.';
+  errorDiv.style.display = 'block';
+});
+
 }
 
+
+
+// ========== Close Scan Modal and Stop Camera ==========
 function closeScanModal() {
   const modal = document.getElementById('scanModal');
   const video = document.getElementById('videoStream');
+  const captureBtn = document.getElementById('captureBtn');
+  const preview = document.getElementById('imagePreview');
+  const result = document.getElementById('scanResult');
+
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
     stream = null;
   }
+
   video.srcObject = null;
+  captureBtn.disabled = true;
   modal.classList.remove('active');
+  result.innerHTML = '';
+  result.classList.remove('active');
+  preview.innerHTML = '';  // clear preview on modal close
 }
 
+
+
+// ========== Capture Image from Video Stream and Send for Prediction ==========
 function captureImage() {
   const video = document.getElementById('videoStream');
   const canvas = document.getElementById('scanCanvas');
   const preview = document.getElementById('imagePreview');
   const result = document.getElementById('scanResult');
+  const captureBtn = document.getElementById('captureBtn');
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
 
-  const img = document.createElement('img');
-  img.src = canvas.toDataURL('image/jpeg');
-  img.alt = 'Captured Plant Leaf';
-  preview.innerHTML = '';
-  preview.appendChild(img);
-
-  result.innerHTML = '<p class="loading">Analyzing image...</p>';
-  result.classList.add('active');
-
-  // Simulate API call delay
-  setTimeout(() => {
-    const detectedDisease = 'leaf-spot';
-    const disease = diseaseInfo[detectedDisease][currentLang];
-    result.innerHTML = `
-      <h2>${disease.title}</h2>
-      <p>${disease.description}</p>
-      <h3>${messages[currentLang].cure || 'Cure Measures'}</h3>
-      <ul>
-        ${disease.cures.map(cure => `<li>${cure}</li>`).join('')}
-      </ul>
-    `;
-  }, 1000);
-  closeScanModal();
+  if (canvas.width < 300 || canvas.height < 300) {
+  alert('Image too small for accurate detection. Please try again.');
+  captureBtn.disabled = false;
+  return;
 }
 
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  // Disable capture button while processing
+  captureBtn.disabled = true;
+  result.innerHTML = '<p class="loading"><i class="fas fa-spinner fa-spin"></i> Analyzing image...</p>';
+  result.classList.add('active');
+
+  // Convert canvas to blob and send
+  canvas.toBlob(async (blob) => {
+    if (!blob) {
+      alert('Failed to capture image.');
+      captureBtn.disabled = false;
+      return;
+    }
+
+    // Show preview image
+    preview.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(blob);
+    img.alt = 'Captured Plant Leaf';
+    preview.appendChild(img);
+
+    // Prepare form data and send to backend
+    try {
+      const formData = new FormData();
+      formData.append('image', blob, 'captured.jpg');
+
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok.');
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        result.innerHTML = `<p class="error">${data.error}</p>`;
+      } else {
+        result.innerHTML = `<p><strong>Disease Detected:</strong> ${data.disease}</p>`;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      result.innerHTML = `<p class="error">Failed to analyze image.</p>`;
+    } finally {
+      captureBtn.disabled = false;
+    }
+  }, 'image/jpeg');
+}
+
+// ========== Retake Image: clear results and re-enable camera feed ==========
 function retakeImage() {
   const result = document.getElementById('scanResult');
   result.innerHTML = '';
   result.classList.remove('active');
+
+  const preview = document.getElementById('imagePreview');
+  preview.innerHTML = '';  // Clear preview image on retake
+
   const video = document.getElementById('videoStream');
   if (stream) {
     video.srcObject = stream;
   }
 }
+
 
 // Disease Modal Functions
 function showDiseaseInfo(diseaseId) {
@@ -324,13 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// This function handles image preview and prediction
+// ========== Upload Image Preview and Predict ==========
 function previewImage(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const preview = document.getElementById('imagePreview');
-  preview.innerHTML = ''; // ✅ Clear previous image and prediction
+  preview.innerHTML = ''; // Clear previous
 
   const img = document.createElement('img');
   img.src = URL.createObjectURL(file);
@@ -340,21 +394,37 @@ function previewImage(event) {
   const formData = new FormData();
   formData.append('image', file);
 
+  const result = document.createElement('p');
+  result.className = 'disease-result';
+  preview.appendChild(result);
+  result.textContent = 'Analyzing image...';
+
   fetch('/predict', {
     method: 'POST',
     body: formData
   })
   .then(response => response.json())
   .then(data => {
-    const result = document.createElement('p');
-    result.className = 'disease-result';
-    result.innerHTML = `<strong>Disease Detected:</strong> ${data.disease}`;
-    preview.appendChild(result);
+    if (data.error) {
+      result.textContent = data.error;
+    } else {
+      result.innerHTML = `<strong>Disease Detected:</strong> ${data.disease}`;
+    }
   })
   .catch(err => {
     console.error('Upload error:', err);
+    result.textContent = 'Failed to analyze image.';
   });
 }
+
+// Attach previewImage on upload input change
+document.addEventListener('DOMContentLoaded', () => {
+  const uploadInput = document.getElementById('uploadInput');
+  if (uploadInput) {
+    uploadInput.addEventListener('change', previewImage);
+  }
+});
+
 
 
 function toggleChat() {
@@ -558,7 +628,7 @@ const CHATBOT_API_URL = "https://generativelanguage.googleapis.com/v1beta/models
 // google maps
 function openPesticideShopsMap() {
   // Define the precise search query for pesticide shops in Near Me.
-  const query = "pesticide shop agrovet Near Me";
+  const query = "Shop agrovet Near Me";
 
   // Create the final Google Maps URL with the precise search query.
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;

@@ -16,8 +16,6 @@
     </div>
     <ul class="nav-menu">
       <li><a href="#about">About</a></li>
-      <li><a href="#hero">Scan</a></li>
-      <li><a href="#hero">Upload</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
     <div class="right-controls">
@@ -37,36 +35,47 @@
     </div>
   </nav>
 
- <!-- Hero Section -->
-<section id="hero" class="hero">
-  <h1 id="heroTitle">Plant Disease Detector</h1>
-  <p id="heroSubtitle">
-    Scan or upload an image of your plant leaf<br>
-    to detect disease and get solutions instantly.
-  </p>
-  <div class="hero-buttons">
-    <label class="upload-btn" for="uploadInput">
-      <i class="fas fa-upload"></i>
-      <span id="uploadBtnText">Upload</span>
-    </label>
-    <input type="file" id="uploadInput" accept="image/*" />
-  </div>
 
-  <div id="imagePreview" class="image-preview"></div>
-</section>
+    <!-- Hero Section -->
+  <section id="hero" class="hero">
+    <h1 id="heroTitle">Plant Disease Detector</h1>
+    <p id="heroSubtitle">
+      Scan or upload an image of your plant leaf<br />
+      to detect disease and get solutions instantly.
+    </p>
 
+    <div class="hero-buttons">
+      <!-- Upload Button -->
+      <label class="upload-btn" for="uploadInput">
+        <i class="fas fa-upload"></i>
+        <span id="uploadBtnText">Upload</span>
+      </label>
+      <input type="file" id="uploadInput" accept="image/*" style="display: none;" />
 
+      <!-- Scan Button -->
+      <button class="scan-btn" onclick="openScanModal()">
+        <i class="fas fa-camera"></i>
+        <span>Scan</span>
+      </button>
+    </div>
+
+    <div id="imagePreview" class="image-preview"></div>
   </section>
+
 
   <!-- Scan Modal -->
   <div id="scanModal" class="scan-modal">
     <div class="scan-modal-content">
-      <span class="close-btn" onclick="closeScanModal()">&times;</span>
+      <span class="close-btn" onclick="closeScanModal()" style="cursor:pointer; float:right; font-size: 24px;">&times;</span>
       <h2>Scan Leaf</h2>
+
+      <!-- Error message placeholder -->
+      <div id="scanError" class="error-message" style="display:none; color:red; margin-top:10px;"></div>
+
       <video id="videoStream" autoplay playsinline></video>
       <canvas id="scanCanvas" style="display: none;"></canvas>
       <div class="scan-controls">
-        <button onclick="captureImage()">Capture</button>
+        <button id="captureBtn" onclick="captureImage()">Capture</button>
         <button onclick="retakeImage()">Retake</button>
         <button onclick="closeScanModal()">Cancel</button>
       </div>
