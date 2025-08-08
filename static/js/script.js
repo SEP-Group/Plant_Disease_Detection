@@ -11,10 +11,7 @@ const messages = {
     heroSubtitle: "Scan or upload an image of your plant leaf<br>to detect disease and get solutions instantly.",
     scanBtn: "Scan",
     uploadBtn: "Upload",
-    feature1Title: "Disease Detection",
-    feature1Text: "AI-powered diagnosis from your plant image",
-    feature2Title: "Medicine Guide",
-    feature2Text: "Accurate medicine suggestions for recovery",
+
     feature3Title: "Nearby Assistance",
     feature3Text: "Find pesticide shops near you in Nepal",
     chatTitle: "Chatbot",
@@ -36,10 +33,6 @@ const messages = {
     heroSubtitle: "तपाईंको बिरुवाको पातको तस्वीर स्क्यान गर्नुहोस् वा अपलोड गर्नुहोस्<br>रोग पहिचान गर्न र तुरुन्त समाधान प्राप्त गर्न।",
     scanBtn: "स्क्यान",
     uploadBtn: "अपलोड",
-    feature1Title: "रोग पहिचान",
-    feature1Text: "तपाईंको बिरुवाको तस्वीरबाट AI-संचालित निदान",
-    feature2Title: "औषधि मार्गदर्शन",
-    feature2Text: "निको हुनको लागि सटीक औषधि सुझावहरू",
     feature3Title: "नजिकको सहायता",
     feature3Text: "नेपालमा तपाईंको नजिकका कीटनाशक पसलहरू फेला पार्नुहोस्",
     chatTitle: "च्याटबट",
@@ -459,18 +452,6 @@ function updateSiteUI() {
   const uploadBtnText = document.getElementById('uploadBtnText');
   if (uploadBtnText) uploadBtnText.textContent = msgs.uploadBtn;
 
-  const feature1Title = document.getElementById('feature1Title');
-  if (feature1Title) feature1Title.textContent = msgs.feature1Title;
-
-  const feature1Text = document.getElementById('feature1Text');
-  if (feature1Text) feature1Text.textContent = msgs.feature1Text;
-
-  const feature2Title = document.getElementById('feature2Title');
-  if (feature2Title) feature2Title.textContent = msgs.feature2Title;
-
-  const feature2Text = document.getElementById('feature2Text');
-  if (feature2Text) feature2Text.textContent = msgs.feature2Text;
-
   const feature3Title = document.getElementById('feature3Title');
   if (feature3Title) feature3Title.textContent = msgs.feature3Title;
 
@@ -759,4 +740,34 @@ function handleSignup(e) {
 function handleContactForm(e) {
   e.preventDefault();
   alert("Thank you for contacting us! We'll get back to you soon.");
+}
+
+
+const classDescriptions = {
+  "Apple___Apple_scab": "Apple scab is a fungal disease causing dark spots on leaves and fruit.",
+  "Apple___Black_rot": "Black rot causes rotting of fruits and leaf spots on apple trees.",
+  "Apple___Cedar_apple_rust": "Cedar apple rust causes orange spots on apple leaves and fruit.",
+  "Apple___healthy": "This apple leaf or fruit is healthy and free of diseases.",
+  "Tomato___Late_blight": "Late blight causes dark lesions on tomato leaves and fruit, leading to decay.",
+  "Tomato___healthy": "This tomato plant is healthy and free of diseases."
+};
+
+// Function to update the description area
+function showDescription(predictedClass) {
+  const description = classDescriptions[predictedClass] || "No description available.";
+  document.getElementById('resultDescription').textContent = description;
+}
+
+// Upload handler example
+async function handleUpload(file) {
+  const predictedClass = await predictFromFile(file);
+  showDescription(predictedClass);
+  // Other upload result UI updates...
+}
+
+// Scan handler example
+async function handleScan(imageData) {
+  const predictedClass = await predictFromScan(imageData);
+  showDescription(predictedClass);
+  // Other scan result UI updates...
 }
