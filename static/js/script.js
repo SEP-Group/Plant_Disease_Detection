@@ -242,6 +242,114 @@ function formatDiseaseName(name) {
   return formatted;
 }
 
+// ======= Recommendation helpers (paste once, e.g. after formatDiseaseName) =======
+
+const healthyMessages = {
+  en: "Your plant appears healthy. Keep watering, provide sunlight and monitor for pests. Would you like general care tips?",
+  np: "तपाईंको बिरुवा स्वस्थ देखिन्छ। उपयुक्त पानी, घाम र किराको निगरानी गर्दै हेरचाह जारी राख्नुहोस्। के तपाईंलाई साधारण हेरचाह सुझाव चाहिन्छ?"
+};
+
+// Map model output string to keys used in diseaseInfo
+function mapToDiseaseKey(diseaseStr) {
+  if (!diseaseStr) return null;
+  const s = diseaseStr.toLowerCase();
+  if (s.includes('healthy')) return 'healthy';
+  if ((s.includes('leaf') && s.includes('spot')) || s.includes('leaf_spot') || s.includes('leaf-spot')) return 'leaf-spot';
+  if (s.includes('powder') || s.includes('mildew')) return 'powdery-mildew';
+  if (s.includes('yellow') && s.includes('mosaic')) return 'yellow-mosaic';
+  if (s.includes('rust')) return 'rust';
+  // fallback: check keys by loose matching
+  for (const key of Object.keys(diseaseInfo)) {
+    const keyPhrase = key.replace(/[-_]/g, ' ');
+    if (s.includes(keyPhrase)) return key;
+  }
+  return null;
+}
+
+// Open chat and append a bot message (not sent to external API — local UI message)
+function openChatWithMessage(message) {
+  const chatWindow = document.getElementById('chatWindow');
+  chatWindow.style.display = 'flex';
+  chatWindow.style.flexDirection = 'column';
+
+  const chatBody = document.getElementById('chatBody');
+  if (!chatBody) return;
+  const botMsg = document.createElement('p');
+  botMsg.classList.add('bot-msg');
+  botMsg.textContent = message;
+  chatBody.appendChild(botMsg);
+  scrollChatToBottom();
+
+  // focus input so user can continue
+  const input = document.getElementById('userInput');
+  if (input) input.focus();
+}
+
+// Build and show recommendations in the result element
+function showRecommendations(resultEl, predictedDisease) {
+  // remove any existing recommendation box
+  const existing = resultEl.querySelector('.recommendation-box');
+  if (existing) existing.remove();
+
+  // description from classDescriptions if available
+  const descKey = formatDiseaseName(predictedDisease);
+  const description = classDescriptions[descKey] || "No description available.";
+
+  // Basic result header
+  resultEl.innerHTML = `<p><strong>Disease Detected:</strong> ${predictedDisease}</p>
+                        <p>${description}</p>`;
+
+  const mappedKey = mapToDiseaseKey(predictedDisease);
+
+  if (mappedKey === 'healthy') {
+    // Show healthy message + open chat suggestion
+    const recDiv = document.createElement('div');
+    recDiv.className = 'recommendation-box';
+    recDiv.style.marginTop = '12px';
+    recDiv.innerHTML = `<h3>${messages[currentLang].heroTitle}: Healthy</h3>
+                        <p>${healthyMessages[currentLang]}</p>`;
+    resultEl.appendChild(recDiv);
+
+    openChatWithMessage(healthyMessages[currentLang]);
+    return;
+  }
+
+  if (mappedKey && diseaseInfo[mappedKey]) {
+    const info = diseaseInfo[mappedKey][currentLang] || diseaseInfo[mappedKey].en;
+    const title = info.title || mappedKey;
+    const cures = info.cures || [];
+
+    const recDiv = document.createElement('div');
+    recDiv.className = 'recommendation-box';
+    recDiv.style.marginTop = '12px';
+    recDiv.innerHTML = `<h3>Recommendations for ${title}</h3>`;
+
+    const ul = document.createElement('ul');
+    cures.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+    recDiv.appendChild(ul);
+    resultEl.appendChild(recDiv);
+
+    // Also open chat and add brief summary message
+    const summary = `${title}: ${cures.slice(0,3).join('; ')}${cures.length>3 ? '...' : ''}`;
+    openChatWithMessage(summary);
+    return;
+  }
+
+  // Fallback if we can't map to a recommendation
+  const recDiv = document.createElement('div');
+  recDiv.className = 'recommendation-box';
+  recDiv.style.marginTop = '12px';
+  recDiv.innerHTML = `<h3>No specific recommendations found</h3>
+                      <p>Try re-taking the image or ask the chatbot for further help.</p>`;
+  resultEl.appendChild(recDiv);
+  openChatWithMessage("I couldn't match the detected disease to a recommendation. Would you like the chatbot to help?");
+}
+
+
 // ===== Scan Modal Functions =====
 
 // Open Scan Modal and Start Camera
@@ -315,12 +423,10 @@ function captureImage() {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0);
 
-  // Disable capture button while processing
   captureBtn.disabled = true;
   result.innerHTML = '<p class="loading"><i class="fas fa-spinner fa-spin"></i> Analyzing image...</p>';
   result.classList.add('active');
 
-  // Convert canvas to blob and send
   canvas.toBlob(async (blob) => {
     if (!blob) {
       alert('Failed to capture image.');
@@ -328,14 +434,12 @@ function captureImage() {
       return;
     }
 
-    // Show preview image
     preview.innerHTML = '';
     const img = document.createElement('img');
     img.src = URL.createObjectURL(blob);
     img.alt = 'Captured Plant Leaf';
     preview.appendChild(img);
 
-    // Prepare form data and send to backend
     try {
       const formData = new FormData();
       formData.append('image', blob, 'captured.jpg');
@@ -345,10 +449,7 @@ function captureImage() {
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
-      }
-
+      if (!response.ok) throw new Error('Network response was not ok.');
       const data = await response.json();
 
       if (data.error) {
@@ -361,18 +462,40 @@ function captureImage() {
           <p>${description}</p>
         `;
 
-                // Then prompt user if they want recommendations:
+        // Ask Yes/No question
         const askMsg = document.createElement('p');
-        askMsg.classList.add('bot-msg');
-        askMsg.textContent = "Do you want medicine or guide recommendation? Please type 'medicine' or 'guide'.";
+        askMsg.textContent = "Do you want a medicine recommendation?";
         result.appendChild(askMsg);
 
-        // Open chatbot automatically and focus input
-        const chatWindow = document.getElementById('chatWindow');
-        chatWindow.style.display = 'flex';
-        chatWindow.style.flexDirection = 'column';
-        document.getElementById('userInput').focus();
+        const btnContainer = document.createElement('div');
+        btnContainer.style.marginTop = '10px';
 
+        // Yes button
+        const yesBtn = document.createElement('button');
+        yesBtn.textContent = "Yes";
+        yesBtn.style.marginRight = '10px';
+        yesBtn.onclick = () => {
+          const chatWindow = document.getElementById('chatWindow');
+          chatWindow.style.display = 'flex';
+          chatWindow.style.flexDirection = 'column';
+          sendChatbotMessage(`medicine for ${data.disease}`);
+          document.getElementById('userInput').focus();
+        };
+
+        // No button
+        const noBtn = document.createElement('button');
+        noBtn.textContent = "No";
+        noBtn.onclick = () => {
+          const chatWindow = document.getElementById('chatWindow');
+          chatWindow.style.display = 'flex';
+          chatWindow.style.flexDirection = 'column';
+          sendChatbotMessage("No medicine needed. Provide plant care tips.");
+          document.getElementById('userInput').focus();
+        };
+
+        btnContainer.appendChild(yesBtn);
+        btnContainer.appendChild(noBtn);
+        result.appendChild(btnContainer);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -382,6 +505,8 @@ function captureImage() {
     }
   }, 'image/jpeg');
 }
+
+
 
 // Retake Image: clear results and re-enable camera feed
 function retakeImage() {
@@ -404,7 +529,7 @@ function previewImage(event) {
   if (!file) return;
 
   const preview = document.getElementById('imagePreview');
-  preview.innerHTML = ''; // Clear previous
+  preview.innerHTML = '';
 
   const img = document.createElement('img');
   img.src = URL.createObjectURL(file);
@@ -414,7 +539,7 @@ function previewImage(event) {
   const formData = new FormData();
   formData.append('image', file);
 
-  const result = document.createElement('p');
+  const result = document.createElement('div');
   result.className = 'disease-result';
   preview.appendChild(result);
   result.textContent = 'Analyzing image...';
@@ -431,9 +556,44 @@ function previewImage(event) {
       const key = formatDiseaseName(data.disease);
       const description = classDescriptions[key] || "No description available.";
       result.innerHTML = `
-        <strong>Disease Detected:</strong> ${data.disease}<br />
-        ${description}
+        <p><strong>Disease Detected:</strong> ${data.disease}</p>
+        <p>${description}</p>
       `;
+
+      // Ask Yes/No question
+      const askMsg = document.createElement('p');
+      askMsg.textContent = "Do you want a medicine recommendation?";
+      result.appendChild(askMsg);
+
+      const btnContainer = document.createElement('div');
+      btnContainer.style.marginTop = '10px';
+
+      // Yes button
+      const yesBtn = document.createElement('button');
+      yesBtn.textContent = "Yes";
+      yesBtn.style.marginRight = '10px';
+      yesBtn.onclick = () => {
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        sendChatbotMessage(`medicine for ${data.disease}`);
+        document.getElementById('userInput').focus();
+      };
+
+      // No button
+      const noBtn = document.createElement('button');
+      noBtn.textContent = "No";
+      noBtn.onclick = () => {
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        sendChatbotMessage("No medicine needed. Provide plant care tips.");
+        document.getElementById('userInput').focus();
+      };
+
+      btnContainer.appendChild(yesBtn);
+      btnContainer.appendChild(noBtn);
+      result.appendChild(btnContainer);
     }
   })
   .catch(err => {
@@ -441,6 +601,15 @@ function previewImage(event) {
     result.textContent = 'Failed to analyze image.';
   });
 }
+
+
+
+function sendChatbotMessage(message) {
+  const input = document.getElementById('userInput');
+  input.value = message;
+  sendMessage(); // Uses your existing chatbot sending function
+}
+
 
 // Attach previewImage on upload input change
 document.addEventListener('DOMContentLoaded', () => {
