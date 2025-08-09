@@ -142,55 +142,89 @@ const diseaseInfo = {
     }
   }
 };
-
 // ======= NAVIGATION SCROLL & ACTIVE LINK HANDLER =======
 document.addEventListener('DOMContentLoaded', () => {
-    const navLinks = document.querySelectorAll('.nav-menu a');
+  const navLinks = document.querySelectorAll('.nav-menu a');
+  const navbar = document.querySelector('.navbar');
 
+  // Smooth scroll on nav link click
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const targetId = link.getAttribute('href').substring(1);
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+
+  let lastScrollTop = 0;
+
+  // Single scroll event listener handling both active links and navbar visibility
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let fromTop = scrollTop + 100;
+
+    // Active link highlighting
     navLinks.forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
+      const section = document.getElementById(link.getAttribute('href').substring(1));
+      if (section && section.offsetTop <= fromTop && (section.offsetTop + section.offsetHeight) > fromTop) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
     });
 
-    window.addEventListener('scroll', () => {
-        let fromTop = window.scrollY + 100;
-        navLinks.forEach(link => {
-            const section = document.getElementById(link.getAttribute('href').substring(1));
-            if (section && section.offsetTop <= fromTop && (section.offsetTop + section.offsetHeight) > fromTop) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-    });
+    // Navbar hide/show on scroll direction
+    if (navbar) {
+      if (scrollTop > lastScrollTop) {
+        // scrolling down — hide navbar
+        navbar.style.top = '-80px'; // adjust to navbar height
+      } else {
+        // scrolling up — show navbar
+        navbar.style.top = '0';
+      }
+    }
 
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+  });
+
+  // Dark mode toggle setup
+  const toggleInput = document.querySelector('.dark-toggle input');
+  if (toggleInput) {
+    // Restore dark mode if enabled
     const savedMode = localStorage.getItem("darkMode");
     if (savedMode === "enabled") {
+      document.body.classList.add("dark");
+      toggleInput.checked = true;
+    }
+
+    // Listen for toggle changes
+    toggleInput.addEventListener('change', () => {
+      if (toggleInput.checked) {
         document.body.classList.add("dark");
-        const toggleInput = document.querySelector('.dark-toggle input');
-        if (toggleInput) toggleInput.checked = true;
-    }
+        localStorage.setItem("darkMode", "enabled");
+      } else {
+        document.body.classList.remove("dark");
+        localStorage.setItem("darkMode", "disabled");
+      }
+    });
+  }
 
-    // Call UI update functions if they exist
-    if (typeof updateSiteUI === "function") updateSiteUI();
-    if (typeof updateChatUI === "function") updateChatUI();
+  // Call UI update functions if they exist
+  if (typeof updateSiteUI === "function") updateSiteUI();
+  if (typeof updateChatUI === "function") updateChatUI();
 
-    const nearbyFeature = document.querySelector('[data-feature="nearby-assistance"]');
-    if (nearbyFeature) {
-        nearbyFeature.style.cursor = 'pointer';
-        nearbyFeature.addEventListener('click', openPesticideShopsMap);
-    }
+  const nearbyFeature = document.querySelector('[data-feature="nearby-assistance"]');
+  if (nearbyFeature) {
+    nearbyFeature.style.cursor = 'pointer';
+    nearbyFeature.addEventListener('click', openPesticideShopsMap);
+  }
 
-    const uploadInput = document.getElementById('uploadInput');
-    if (uploadInput) uploadInput.addEventListener('change', previewImage);
+  const uploadInput = document.getElementById('uploadInput');
+  if (uploadInput) uploadInput.addEventListener('change', previewImage);
 });
-
 
 // Disease descriptions dictionary
 const classDescriptions = {
