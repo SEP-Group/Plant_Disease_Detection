@@ -976,3 +976,20 @@ function handleContactForm(e) {
   e.preventDefault();
   alert("Thank you for contacting us! We'll get back to you soon.");
 }
+function showDiseaseInfo(diseaseId) {
+  const modal = document.getElementById('diseaseModal');
+  const title = document.getElementById('diseaseTitle');
+  const description = document.getElementById('diseaseDescription');
+  const cures = document.getElementById('cureMeasures');
+  const disease = diseaseInfo[diseaseId][currentLang];
+
+  title.textContent = disease.title;
+  description.textContent = disease.description;
+  cures.innerHTML = disease.cures.map(cure => `<li>${cure}</li>`).join('');
+  modal.classList.add('active');
+}
+
+function closeDiseaseModal() {
+  const modal = document.getElementById('diseaseModal');
+  modal.classList.remove('active');
+}
