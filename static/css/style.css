@@ -971,7 +971,7 @@ body {
   padding: 10px 15px;
   overflow-y: auto;
   background-color: #f0f8e5;
-  font-size: 0.95rem;
+  font-size: 1.2rem;
   color: #3a5f0b;
   display: flex;
   flex-direction: column;
@@ -1946,4 +1946,10 @@ body.dark::before {
     display: block;
     margin-bottom: 10px;
   }
+  .result-title { margin: 0 0 8px 0; }
+  .result-desc  { margin: 0 0 10px 0; }
+  .mini-list    { margin: 0 0 12px 1.2rem; }
+  .ask-wrap     { margin-top: 12px; text-align: center; }
+  .ask-wrap .ask-buttons { display:flex; justify-content:center; gap:10px; }
+
 }

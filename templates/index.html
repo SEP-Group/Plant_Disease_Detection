@@ -15,17 +15,20 @@
       <img src="{{ url_for('static', filename='images/plant.png') }}" alt="Logo">
     </div>
     <ul class="nav-menu">
-      <li><a href="#about">About</a></li>
-      <li><a href="#contact">Contact</a></li>
+      <li><a href="#about" id="navAbout">About</a></li>
+      <li><a href="#contact" id="navContact">Contact</a></li>
     </ul>
     <div class="right-controls">
-      <button class="nav-login-btn" onclick="openAuthModal()">Login / Signup</button>
+      <button class="nav-login-btn" id="loginSignupBtn" onclick="openAuthModal()">Login / Signup</button>
+
+      <!-- Site language selector (controls the whole site, including chat) -->
       <div class="language-detect">
         <select id="siteLanguage" onchange="switchSiteLanguage()">
           <option value="en">English</option>
-          <option value="np">नेपाली </option>
+          <option value="np">नेपाली</option>
         </select>
       </div>
+
       <div class="dark-toggle">
         <label>
           <input type="checkbox" onchange="toggleDarkMode()" />
@@ -35,8 +38,7 @@
     </div>
   </nav>
 
-
-    <!-- Hero Section -->
+  <!-- Hero Section -->
   <section id="hero" class="hero">
     <h1 id="heroTitle">Plant Disease Detector</h1>
     <p id="heroSubtitle">
@@ -55,19 +57,18 @@
       <!-- Scan Button -->
       <button class="scan-btn" onclick="openScanModal()">
         <i class="fas fa-camera"></i>
-        <span>Scan</span>
+        <span id="scanBtnText">Scan</span>
       </button>
     </div>
 
     <div id="imagePreview" class="image-preview"></div>
   </section>
 
-
   <!-- Scan Modal -->
   <div id="scanModal" class="scan-modal">
     <div class="scan-modal-content">
       <span class="close-btn" onclick="closeScanModal()" style="cursor:pointer; float:right; font-size: 24px;">&times;</span>
-      <h2>Scan Leaf</h2>
+      <h2 id="scanModalTitle">Scan Leaf</h2>
 
       <!-- Error message placeholder -->
       <div id="scanError" class="error-message" style="display:none; color:red; margin-top:10px;"></div>
@@ -76,8 +77,8 @@
       <canvas id="scanCanvas" style="display: none;"></canvas>
       <div class="scan-controls">
         <button id="captureBtn" onclick="captureImage()">Capture</button>
-        <button onclick="retakeImage()">Retake</button>
-        <button onclick="closeScanModal()">Cancel</button>
+        <button id="retakeBtn" onclick="retakeImage()">Retake</button>
+        <button id="cancelBtn" onclick="closeScanModal()">Cancel</button>
       </div>
       <div id="scanResult" class="result-section"></div>
     </div>
@@ -86,14 +87,14 @@
   <!-- About Section-->
   <section id="about" class="about-section">
     <div class="about-container">
-      <h2>🌿 About Plant Disease Detector</h2>
-      <p>
+      <h2 id="aboutTitle">🌿 About Plant Disease Detector</h2>
+      <p id="aboutPara1">
         <strong>Plant Disease Detector</strong> is a smart, AI-powered web application built to assist farmers, gardeners, and plant enthusiasts in identifying plant diseases with just a simple image scan.
       </p>
-      <p>
+      <p id="aboutPara2">
         Using advanced machine learning models, it analyzes leaf images to detect possible diseases with high accuracy. Within seconds, users receive the disease name, confidence score, and helpful treatment suggestions.
       </p>
-      <p>
+      <p id="aboutPara3">
         Our mission is to make plant care easier, reduce crop loss, and support eco-friendly farming by providing fast, accessible, and reliable plant health diagnostics.
       </p>
     </div>
@@ -101,23 +102,23 @@
 
   <!-- Default Images Section -->
   <section class="default-images">
-    <h2>Plant Disease Samples</h2>
+    <h2 id="sampleTitle">Plant Disease Samples</h2>
     <div class="image-grid">
       <div class="image-card" data-disease="leaf-spot" onclick="showDiseaseInfo('leaf-spot')">
         <img src="{{ url_for('static', filename='images/mangoleafspot.jpg') }}" alt="Sample 1">
-        <p>Leaf Spot Disease</p>
+        <p id="sampleLeafSpot">Leaf Spot Disease</p>
       </div>
       <div class="image-card" data-disease="powdery-mildew" onclick="showDiseaseInfo('powdery-mildew')">
         <img src="{{ url_for('static', filename='images/powdery_mildew.jpg') }}" alt="Sample 2">
-        <p>Powdery Mildew</p>
+        <p id="samplePowderyMildew">Powdery Mildew</p>
       </div>
       <div class="image-card" data-disease="yellow-mosaic" onclick="showDiseaseInfo('yellow-mosaic')">
         <img src="{{ url_for('static', filename='images/yellow-mosaic-virus.jpg') }}" alt="Sample 3">
-        <p>Yellow Mosaic Virus</p>
+        <p id="sampleYellowMosaic">Yellow Mosaic Virus</p>
       </div>
       <div class="image-card" data-disease="rust" onclick="showDiseaseInfo('rust')">
         <img src="{{ url_for('static', filename='images/rust-diseases.webp') }}" alt="Sample 4">
-        <p>Rust Infection</p>
+        <p id="sampleRust">Rust Infection</p>
       </div>
     </div>
   </section>
@@ -128,7 +129,7 @@
       <span class="close-btn" onclick="closeDiseaseModal()">&times;</span>
       <h2 id="diseaseTitle"></h2>
       <p id="diseaseDescription"></p>
-      <h3>Cure Measures</h3>
+      <h3 id="cureMeasuresTitle">Cure Measures</h3>
       <ul id="cureMeasures"></ul>
     </div>
   </div>
@@ -147,14 +148,10 @@
     <i class="fa-solid fa-message"></i>
   </div>
 
-  <!-- Chat Window -->
-  <div class="chat-window" id="chatWindow">
+  <!-- Chat Window (bigger & no language selector) -->
+  <div class="chat-window" id="chatWindow" style="display:none; width:420px; height:600px;">
     <div class="chat-header">
       <span id="chatTitle">Chatbot</span>
-      <select id="language" class="language-select" onchange="switchLanguage()">
-        <option value="en">English</option>
-        <option value="np">नेपाली </option>
-      </select>
     </div>
     <div class="chat-body" id="chatBody">
       <p id="welcomeMsg">Hello! How can I help you?</p>
@@ -182,17 +179,17 @@
         <button id="signupToggle" onclick="showSignup()">Signup</button>
       </div>
       <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
-        <h2>Login</h2>
+        <h2 id="loginTitle">Login</h2>
         <input type="email" id="loginEmail" placeholder="Email" required />
         <input type="password" id="loginPassword" placeholder="Password" required />
-        <button type="submit" class="submit-btn">Login</button>
+        <button type="submit" id="loginSubmitBtn" class="submit-btn">Login</button>
       </form>
       <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
-        <h2>Signup</h2>
+        <h2 id="signupTitle">Signup</h2>
         <input type="text" id="signupName" placeholder="Full Name" required />
         <input type="email" id="signupEmail" placeholder="Email" required />
         <input type="password" id="signupPassword" placeholder="Password" required />
-        <button type="submit" class="submit-btn">Signup</button>
+        <button type="submit" id="signupSubmitBtn" class="submit-btn">Signup</button>
       </form>
     </div>
   </div>
@@ -201,16 +198,16 @@
   <section id="contact" class="contact-section">
     <div class="contact-container">
       <div class="contact-form">
-        <h2>Contact Us</h2>
+        <h2 id="contactTitle">Contact Us</h2>
         <form onsubmit="handleContactForm(event)">
-          <input type="text" placeholder="Your Name" required />
-          <input type="email" placeholder="Your Email" required />
-          <textarea placeholder="Your Message" rows="5" required></textarea>
-          <button type="submit">Send Message</button>
+          <input type="text" id="contactName" placeholder="Your Name" required />
+          <input type="email" id="contactEmail" placeholder="Your Email" required />
+          <textarea id="contactMessage" placeholder="Your Message" rows="5" required></textarea>
+          <button type="submit" id="contactSendBtn">Send Message</button>
         </form>
       </div>
       <div class="contact-info">
-        <h3>Get in Touch</h3>
+        <h3 id="getInTouch">Get in Touch</h3>
         <p><i class="fas fa-envelope"></i> support@plantdetector.com</p>
         <p><i class="fas fa-phone"></i> +977-9800000000</p>
         <p><i class="fas fa-map-marker-alt"></i> Kathmandu, Nepal</p>
