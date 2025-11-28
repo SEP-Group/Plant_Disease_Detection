@@ -1,5 +1,6 @@
 import json
 import os
+
 import numpy as np
 from flask import Flask, jsonify, render_template, request
 from tensorflow.keras.models import load_model
@@ -11,6 +12,7 @@ app.config["UPLOAD_FOLDER"] = "static/uploads"
 
 # Load model and class names
 model = load_model("plant_disease_model.h5")
+
 with open("class_names.json") as f:
     class_names = json.load(f)  # list of class names
 
@@ -26,7 +28,6 @@ def predict():
         return jsonify({"error": "No image uploaded"}), 400
 
     file = request.files["image"]
-
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
 
